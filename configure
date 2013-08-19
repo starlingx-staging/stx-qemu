@@ -6167,7 +6167,8 @@ if test "$dpdk" = "yes"; then
     echo "No dpdkdir given"
     exit 1
   fi
-  echo  "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
+  echo "CONFIG_ENABLE_DPDK=y" >> $config_host_mak
+  echo "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
   echo "dpdk_lib_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/lib" >> $config_host_mak
   echo "dpdk_inc_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/include" >> $config_host_mak
   echo "" >> $config_host_mak
