@@ -4040,6 +4040,7 @@ int main(int argc, char **argv, char **envp)
                 break;
             case QEMU_OPTION_nodefconfig:
             case QEMU_OPTION_nouserconfig:
+            case QEMU_OPTION_enable_dpdk:
                 /* Nothing to be parsed here. Especially, do not error out below. */
                 break;
             default:
