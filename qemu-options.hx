@@ -591,6 +591,14 @@ STEXI
 @table @option
 ETEXI
 
+DEF("enable-dpdk", 0, QEMU_OPTION_enable_dpdk,
+    "-enable-dpdk initialized DPDK EAL environment\n", QEMU_ARCH_ALL)
+STEXI
+@item -enable-dpdk
+@findex -enable-dpdk
+Enable DPDK EAL environment at init time (expecting DPDK CLI params).
+ETEXI
+
 DEF("fda", HAS_ARG, QEMU_OPTION_fda,
     "-fda/-fdb file  use 'file' as floppy disk 0/1 image\n", QEMU_ARCH_ALL)
 DEF("fdb", HAS_ARG, QEMU_OPTION_fdb, "", QEMU_ARCH_ALL)
