@@ -1389,6 +1389,7 @@ STEXI
 Remove host network device.
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "object_add",
         .args_type  = "object:O",
@@ -1418,6 +1419,7 @@ STEXI
 @findex object_del
 Destroy QOM object.
 ETEXI
+#endif
 
 #ifdef CONFIG_SLIRP
     {
