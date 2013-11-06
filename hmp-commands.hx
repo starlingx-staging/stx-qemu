@@ -701,6 +701,7 @@ STEXI
 Compute the checksum of a memory region.
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "device_add",
         .args_type  = "device:O",
@@ -731,6 +732,7 @@ STEXI
 Remove device @var{id}. @var{id} may be a short ID
 or a QOM object path.
 ETEXI
+#endif
 
     {
         .name       = "cpu",
