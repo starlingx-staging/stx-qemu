@@ -15,6 +15,9 @@ extern __thread Monitor *cur_mon;
 #define MONITOR_USE_PRETTY    0x08
 #define MONITOR_USE_OOB       0x10
 
+/* Red Hat Monitor's prefix (reversed fully qualified domain) */
+#define RFQDN_REDHAT "__com.redhat_"
+
 bool monitor_cur_is_qmp(void);
 
 void monitor_init_globals(void);
