@@ -27,6 +27,7 @@
 #include "hw/qdev-core.h"
 #include "qapi/error.h"
 #include "qapi/qapi-commands-ui.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qemu/option.h"
 #include "qemu/timer.h"
 #include "chardev/char-fe.h"
@@ -377,6 +378,30 @@ void qmp_screendump(const char *filename, bool has_device, const char *device,
         return;
     }
 
+    ppm_save(filename, surface, errp);
+}
+
+void qmp___com_redhat_qxl_screendump(const char *id, const char *filename, Error **errp)
+{
+    DeviceState *dev;
+    QemuConsole *con;
+    DisplaySurface *surface;
+
+    dev = qdev_find_recursive(sysbus_get_default(), id);
+    if (NULL == dev) {
+        error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
+                  "Device '%s' not found", id);
+        return;
+    }
+
+    con = qemu_console_lookup_by_device(dev, 0);
+    if (con == NULL) {
+        error_setg(errp, "Device %s has no QemuConsole attached to it.", id);
+        return;
+    }
+
+    graphic_hw_update(con);
+    surface = qemu_console_surface(con);
     ppm_save(filename, surface, errp);
 }
 
