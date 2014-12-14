@@ -2859,6 +2859,7 @@ static int spapr_kvm_type(const char *vm_type)
     exit(1);
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 /*
  * Implementation of an interface to adjust firmware path
  * for the bootindex property handling.
@@ -4445,6 +4446,7 @@ DEFINE_SPAPR_MACHINE(2_2, "2.2", false);
 #define SPAPR_COMPAT_2_1 \
         HW_COMPAT_2_1
 
+
 static void spapr_machine_2_1_instance_options(MachineState *machine)
 {
     spapr_machine_2_2_instance_options(machine);
@@ -4456,6 +4458,49 @@ static void spapr_machine_2_1_class_options(MachineClass *mc)
     SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_2_1);
 }
 DEFINE_SPAPR_MACHINE(2_1, "2.1", false);
+#endif
+
+/*
+ * pseries-rhel7.3.0
+ */
+static void spapr_machine_rhel730_instance_options(MachineState *machine)
+{
+}
+
+static void spapr_machine_rhel730_class_options(MachineClass *mc)
+{
+    /* Defaults for the latest behaviour inherited from the base class */
+}
+
+DEFINE_SPAPR_MACHINE(rhel730, "rhel7.3.0", true);
+
+/*
+ * pseries-rhel7.2.0
+ */
+/* Should be like SPAPR_COMPAT_2_5 + 2_4 + 2_3, but "dynamic-reconfiguration"
+ * has been backported to RHEL7_2 so we don't need it here.
+ */
+
+#define SPAPR_COMPAT_RHEL7_2 \
+    HW_COMPAT_RHEL7_2 \
+    { \
+        .driver   = "spapr-vlan", \
+        .property = "use-rx-buffer-pools", \
+        .value    = "off", \
+    },
+
+static void spapr_machine_rhel720_instance_options(MachineState *machine)
+{
+    spapr_machine_rhel730_instance_options(machine);
+}
+
+static void spapr_machine_rhel720_class_options(MachineClass *mc)
+{
+    spapr_machine_rhel730_class_options(mc);
+    SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_2);
+}
+
+DEFINE_SPAPR_MACHINE(rhel720, "rhel7.2.0", false);
 
 static void spapr_machine_register_types(void)
 {

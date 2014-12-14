@@ -101,6 +101,7 @@ void qemu_remove_machine_init_done_notifier(Notifier *notify);
 void qemu_announce_self(void);
 
 extern int autostart;
+extern bool shadow_bios_after_incoming;
 
 typedef enum {
     VGA_NONE, VGA_STD, VGA_CIRRUS, VGA_VMWARE, VGA_XENFB, VGA_QXL,
