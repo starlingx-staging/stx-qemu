@@ -40,6 +40,7 @@ runstate_set(int new_state) "new state %d"
 system_wakeup_request(int reason) "reason=%d"
 qemu_system_shutdown_request(int reason) "reason=%d"
 qemu_system_powerdown_request(void) ""
+migrate_thread(uint64_t migrate_thread_cpumask, uint64_t migrate_thread_priority) "migration Thread pinned to %" PRIu64 "with Priority %" PRIu64
 
 # monitor.c
 monitor_protocol_event_handler(uint32_t event, void *qdict) "event=%d data=%p"
