@@ -1135,6 +1135,38 @@ once migration finished successfully.  Only implemented for SPICE.
 ETEXI
 
     {
+        .name       = "migrate_set_thread_cpumask",
+        .args_type  = "value:o",
+        .params     = "value",
+        .help       = "Set CPU mask for the migration thread."
+                      "Defaults to CPU 0 if no mask is specified",
+        .cmd        = hmp_migrate_set_thread_cpumask,
+    },
+
+STEXI
+@item migrate_set_thread_cpumask @var{value}
+@findex migrate_set_thread_cpumask
+Set CPU mask for the migration thread
+ETEXI
+
+    {
+        .name       = "migrate_set_thread_priority",
+        .args_type  = "value:o",
+        .params     = "value",
+        .help       = "Set real time priority for the the migration thread."
+                      "Defaults to no change migration thread priority if not"
+                      "specified or out of range. Range [1-99].Scheduling"
+                      "policy will always be- SCHED_FIFO",
+        .cmd        = hmp_migrate_set_thread_priority,
+    },
+
+STEXI
+@item migrate_set_thread_priority @var{value}
+@findex migrate_set_thread_priority
+Set real time priority for the the migration thread
+ETEXI
+
+    {
         .name       = "dump-guest-memory",
         .args_type  = "paging:-p,detach:-d,windmp:-w,zlib:-z,lzo:-l,snappy:-s,filename:F,begin:l?,length:l?",
         .params     = "[-p] [-d] [-z|-l|-s|-w] filename [begin length]",
