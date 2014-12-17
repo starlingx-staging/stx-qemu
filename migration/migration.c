@@ -32,6 +32,7 @@
 #include "block/block.h"
 #include "qapi/error.h"
 #include "qapi/qapi-commands-migration.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qapi/qapi-events-migration.h"
 #include "qapi/qmp/qerror.h"
 #include "qapi/qmp/qnull.h"
@@ -45,6 +46,16 @@
 #include "migration/colo.h"
 #include "hw/boards.h"
 #include "monitor/monitor.h"
+#include <sched.h>
+
+/* #define DEBUG */
+
+#ifdef DEBUG
+#define DPRINTF(fmt, ...) \
+        printf(fmt, ## __VA_ARGS__)
+#else
+#define DPRINTF(fmt, ...)
+#endif
 
 #define MAX_THROTTLE  (32 << 20)      /* Migration transfer speed throttling */
 
@@ -89,6 +100,11 @@
 
 static NotifierList migration_state_notifiers =
     NOTIFIER_LIST_INITIALIZER(migration_state_notifiers);
+
+/* variables for pinning the migration thread to a CPU and assigning the
+ * realtime priority to it */
+static uint64_t migrate_thread_cpumask=0;
+static uint64_t migrate_thread_priority=0;
 
 static bool deferred_incoming;
 
@@ -1767,6 +1783,30 @@ void qmp_migrate_set_cache_size(int64_t value, Error **errp)
     qmp_migrate_set_parameters(&p, errp);
 }
 
+void qmp_migrate_set_thread_cpumask(int64_t value, Error **errp)
+{
+    /* Check for truncation */
+    if (value != (size_t)value) {
+        error_setg(errp, "Migration thread CPU Mask exceeding address space");
+        return;
+    }
+    /*resize the value */
+    value >>= 20; /*Magic */
+    migrate_thread_cpumask = value;
+}
+
+void qmp_migrate_set_thread_priority(int64_t value, Error **errp)
+{
+    /* Check for truncation */
+    if (value != (size_t)value) {
+        error_setg(errp, "Migration thread Priority exceeding address space");
+        return;
+    }
+    /*resize the value */
+    value >>= 20;
+    migrate_thread_priority = value;
+}
+
 int64_t qmp_query_migrate_cache_size(Error **errp)
 {
     return migrate_xbzrle_cache_size();
@@ -2969,6 +3009,19 @@ static void *migration_thread(void *opaque)
          * early.
          */
         qemu_savevm_send_postcopy_advise(s->to_dst_file);
+    }
+
+    /* Bind Migration thread to the processor specified by the user */
+    if (sched_setaffinity(0, sizeof(migrate_thread_cpumask), (cpu_set_t *)&migrate_thread_cpumask) <0) {
+        DPRINTF("Error setting user input affinity. Switching to default.\n");
+    }
+
+    /* Change the realtime priority of the migration thread specified by the user */
+    struct sched_param schedp;
+    memset(&schedp, 0, sizeof(schedp));
+    schedp.sched_priority = migrate_thread_priority;
+    if (sched_setscheduler(0, SCHED_FIFO, &schedp) < 0) {
+         DPRINTF("Error setting user input priority. Switching to default.\n");
     }
 
     qemu_savevm_state_setup(s->to_dst_file);

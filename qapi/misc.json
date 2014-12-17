@@ -1329,6 +1329,36 @@
   'returns': 'str' }
 
 ##
+# @migrate_set_thread_cpumask:
+#
+# Set migration thread CPU mask.
+#
+# @value: CPU mask.
+#
+# Returns: nothing on success
+#
+# Notes: A value lesser than zero will be automatically round up to zero.
+#
+# Since: 0.14.0
+##
+{ 'command': 'migrate_set_thread_cpumask', 'data': {'value': 'int'} }
+
+##
+# @migrate_set_thread_priority:
+#
+# Set migration thread Real Timer priority mask.
+#
+# @value: Thread Priority.
+#
+# Returns: nothing on success
+#
+# Notes: A value lesser than zero will be automatically round up to zero.
+#
+# Since: 0.14.0
+##
+{ 'command': 'migrate_set_thread_priority', 'data': {'value': 'int'} }
+
+##
 # @ObjectPropertyInfo:
 #
 # @name: the name of the property
