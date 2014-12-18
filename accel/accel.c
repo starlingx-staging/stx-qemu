@@ -79,8 +79,8 @@ void configure_accelerator(MachineState *ms)
 
     accel = qemu_opt_get(qemu_get_machine_opts(), "accel");
     if (accel == NULL) {
-        /* Use the default "accelerator", tcg */
-        accel = "tcg";
+        /* Use kvm accelerator by default, fail to tcg*/
+        accel = "kvm:tcg";
     }
 
     accel_list = g_strsplit(accel, ":", 0);
