@@ -225,6 +225,10 @@ static void test_cancel_async(void)
 int main(int argc, char **argv)
 {
     qemu_init_main_loop(&error_abort);
+#ifdef HOST_AARCH64
+    sigaction(SIGIO, &(struct sigaction){ .sa_handler = SIG_IGN }, NULL);
+#endif
+
     ctx = qemu_get_current_aio_context();
     pool = aio_get_thread_pool(ctx);
 
