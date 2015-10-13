@@ -11,6 +11,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu-common.h"
 #include "block/aio.h"
 #include "qapi/error.h"
 #include "qemu/timer.h"
@@ -82,6 +83,10 @@ static void bh_delete_cb(void *opaque)
     } else {
         qemu_bh_delete(data->bh);
         data->bh = NULL;
+#ifdef HOST_AARCH64
+    sigaction(SIGIO, &(struct sigaction){ .sa_handler = SIG_IGN }, NULL);
+#endif
+
     }
 }
 
