@@ -1435,6 +1435,10 @@ for opt do
   ;;
   --disable-debug-mutex) debug_mutex=no
   ;;
+  --disable-live-block-migration) live_block_migration="no"
+  ;;
+  --enable-live-block-migration) live_block_migration="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1694,6 +1698,8 @@ disabled with --disable-FEATURE, default is enabled if available:
   glusterfs       GlusterFS backend
   tpm             TPM support
   libssh2         ssh block device support
+  live-block-migration disable live block migration
+  live-block-migration  enable live block migration
   numa            libnuma support
   libxml2         for Parallels image format
   tcmalloc        tcmalloc support
@@ -2218,13 +2224,13 @@ fi
 
 if test "$seccomp" != "no" ; then
     case "$cpu" in
-    i386|x86_64)
+    i386|x86_64|aarch64)
         libseccomp_minver="2.1.0"
         ;;
     mips)
         libseccomp_minver="2.2.0"
         ;;
-    arm|aarch64)
+    arm)
         libseccomp_minver="2.2.3"
         ;;
     ppc|ppc64|s390x)
