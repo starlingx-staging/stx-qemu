@@ -849,6 +849,7 @@ static void vapic_class_init(ObjectClass *klass, void *data)
     dc->reset   = vapic_reset;
     dc->vmsd    = &vmstate_vapic;
     dc->realize = vapic_realize;
+    dc->user_creatable = false; /* RH state preserve */
 }
 
 static const TypeInfo vapic_type = {
