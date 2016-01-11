@@ -306,6 +306,7 @@ static void kvmclock_class_init(ObjectClass *klass, void *data)
     dc->realize = kvmclock_realize;
     dc->vmsd = &kvmclock_vmsd;
     dc->props = kvmclock_properties;
+    dc->user_creatable = false; /* RH state preserve */
 }
 
 static const TypeInfo kvmclock_info = {
