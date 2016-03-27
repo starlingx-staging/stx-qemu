@@ -2,6 +2,7 @@
  * QEMU System Emulator
  *
  * Copyright (c) 2003-2008 Fabrice Bellard
+ * Copyright 2012-2013 Intel Corporation All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -2673,6 +2674,35 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
     return popt;
 }
 
+#ifdef CONFIG_ENABLE_DPDK
+static const QEMUOption *quick_scan_opt(int argc, char **argv, int *poptind)
+{
+    const QEMUOption *popt;
+    int optind = *poptind;
+    char *r = argv[optind];
+
+    loc_set_cmdline(argv, optind, 1);
+    optind++;
+    /* Treat --foo the same as -foo.  */
+    if (r[1] == '-')
+        r++;
+    popt = qemu_options;
+    for(;;) {
+        /* need to ignore non qemu args, e.g. dpdk args */
+        if (!popt->name) {
+            *poptind = optind;
+            return NULL;
+        }
+        if (!strcmp(popt->name, r + 1))
+            break;
+        popt++;
+    }
+
+    *poptind = optind;
+    return popt;
+}
+#endif
+
 static MachineClass *select_machine(void)
 {
     MachineClass *machine_class = find_default_machine();
@@ -2917,6 +2947,9 @@ static void register_global_properties(MachineState *ms)
     user_register_global_props();
 }
 
+extern int
+rte_eal_init(int argc, char **argv);
+
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -2950,6 +2983,10 @@ int main(int argc, char **argv, char **envp)
     FILE *vmstate_dump_file = NULL;
     Error *main_loop_err = NULL;
     Error *err = NULL;
+#ifdef CONFIG_ENABLE_DPDK
+    bool use_dpdk = false;
+    int retval;
+#endif
     bool list_data_dirs = false;
     char *dir, **dirs;
     typedef struct BlockdevOptions_queue {
@@ -2970,6 +3007,37 @@ int main(int argc, char **argv, char **envp)
     atexit(qemu_run_exit_notifiers);
     error_set_progname(argv[0]);
     qemu_init_exec_dir(argv[0]);
+
+#ifdef CONFIG_ENABLE_DPDK
+    /* need to check for -enable-dpdk before calling rte_eal_init.  If
+     * it is not found, don't call  rte_eal_init */
+    optind = 1;
+    while (optind < argc) {
+        if (argv[optind][0] != '-') {
+            /* disk image */
+            optind++;
+            continue;
+        } else {
+            const QEMUOption *popt;
+            popt = quick_scan_opt(argc, argv, &optind);
+            if (popt) {
+                switch (popt->index) {
+                    case QEMU_OPTION_enable_dpdk:
+                        use_dpdk = true;
+                        break;
+                }
+            }
+        }
+    }
+
+    if (use_dpdk) {
+        if ((retval = rte_eal_init(argc, argv)) < 0)
+            return -1;
+
+        argc -= retval;
+        argv += retval;
+    }
+#endif
 
     module_call_init(MODULE_INIT_QOM);
 
