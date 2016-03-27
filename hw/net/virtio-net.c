@@ -2,6 +2,7 @@
  * Virtio Network Device
  *
  * Copyright IBM, Corp. 2007
+ * Copyright 2012-2013 Intel Corporation All Rights Reserved.
  *
  * Authors:
  *  Anthony Liguori   <aliguori@us.ibm.com>
@@ -1137,6 +1138,7 @@ static void receive_header(VirtIONet *n, const struct iovec *iov, int iov_cnt,
     }
 }
 
+#if 0
 static int receive_filter(VirtIONet *n, const uint8_t *buf, int size)
 {
     static const uint8_t bcast[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -1187,6 +1189,7 @@ static int receive_filter(VirtIONet *n, const uint8_t *buf, int size)
 
     return 0;
 }
+#endif
 
 static ssize_t virtio_net_receive_rcu(NetClientState *nc, const uint8_t *buf,
                                       size_t size)
@@ -1208,8 +1211,10 @@ static ssize_t virtio_net_receive_rcu(NetClientState *nc, const uint8_t *buf,
         return 0;
     }
 
+#if 0
     if (!receive_filter(n, buf, size))
         return size;
+#endif
 
     offset = i = 0;
 
