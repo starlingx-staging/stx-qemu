@@ -3109,32 +3109,28 @@ BlockDirtyBitmapSha256 *qmp_x_debug_block_dirty_bitmap_sha256(const char *node,
     return ret;
 }
 
-void hmp_drive_del(Monitor *mon, const QDict *qdict)
+void qmp_drive_del(QDict *qdict, QObject **ret_data, Error **errp)
 {
     const char *id = qdict_get_str(qdict, "id");
     BlockBackend *blk;
     BlockDriverState *bs;
     AioContext *aio_context;
-    Error *local_err = NULL;
 
     bs = bdrv_find_node(id);
     if (bs) {
-        qmp_blockdev_del(id, &local_err);
-        if (local_err) {
-            error_report_err(local_err);
-        }
+        qmp_blockdev_del(id, errp);
         return;
     }
 
     blk = blk_by_name(id);
     if (!blk) {
-        error_report("Device '%s' not found", id);
+        error_setg(errp, "Device '%s' not found", id);
         return;
     }
 
     if (!blk_legacy_dinfo(blk)) {
-        error_report("Deleting device added with blockdev-add"
-                     " is not supported");
+        error_setg(errp, "Deleting device added with blockdev-add"
+                         " is not supported");
         return;
     }
 
@@ -3143,8 +3139,7 @@ void hmp_drive_del(Monitor *mon, const QDict *qdict)
 
     bs = blk_bs(blk);
     if (bs) {
-        if (bdrv_op_is_blocked(bs, BLOCK_OP_TYPE_DRIVE_DEL, &local_err)) {
-            error_report_err(local_err);
+        if (bdrv_op_is_blocked(bs, BLOCK_OP_TYPE_DRIVE_DEL, errp)) {
             aio_context_release(aio_context);
             return;
         }
@@ -3167,6 +3162,16 @@ void hmp_drive_del(Monitor *mon, const QDict *qdict)
     }
 
     aio_context_release(aio_context);
+}
+
+void hmp_drive_del(Monitor *mon, const QDict *qdict)
+{
+    Error *local_err = NULL;
+
+    qmp_drive_del((QDict *)qdict, NULL, &local_err);
+    if (local_err) {
+        error_report_err(local_err);
+    }
 }
 
 void qmp_block_resize(bool has_device, const char *device,
