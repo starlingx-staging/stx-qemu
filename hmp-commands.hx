@@ -1340,7 +1340,7 @@ ETEXI
         .args_type  = "simple-drive:O",
         .params     = "id=name,[file=file][,format=f][,media=d]...",
         .help       = "Create a drive similar to -device if=none.",
-        .mhandler.cmd_new = simple_drive_add,
+        .cmd        = hmp_simple_drive_add,
     },
 
 STEXI
