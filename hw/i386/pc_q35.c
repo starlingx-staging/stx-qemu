@@ -441,6 +441,7 @@ static void pc_q35_machine_rhel730_options(MachineClass *m)
     m->no_floppy = 1;
     /*TODO: allow only sysbus devices that really work with this machine */
     machine_class_allow_dynamic_sysbus_dev(m, TYPE_SYS_BUS_DEVICE);
+    SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
 DEFINE_PC_MACHINE(q35_rhel730, "pc-q35-rhel7.3.0", pc_q35_init_rhel730,
