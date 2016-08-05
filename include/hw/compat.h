@@ -330,6 +330,10 @@
             .driver   = "virtio-rng-pci",\
             .property = "any_layout",\
             .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = TYPE_PCI_DEVICE,\
+            .property = "x-pcie-lnksta-dllla",\
+            .value    = "off",\
         },
 
 /* Mostly like HW_COMPAT_2_4 + 2_3 but:
