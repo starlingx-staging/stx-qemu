@@ -2,6 +2,7 @@
  *  Virtual page mapping
  *
  *  Copyright (c) 2003 Fabrice Bellard
+ *  Copyright (c) 2016 Wind River Systems, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1838,6 +1839,7 @@ static void *file_ram_alloc(RAMBlock *block,
                             Error **errp)
 {
     void *area;
+    int flags;
 
     block->page_size = qemu_fd_getpagesize(fd);
     if (block->mr->align % block->page_size) {
@@ -1884,8 +1886,13 @@ static void *file_ram_alloc(RAMBlock *block,
         perror("ftruncate");
     }
 
+    /* WRS - enable mlock */
+    flags = block->flags & RAM_SHARED;
+    if (enable_mlock) {
+        flags |= MAP_LOCKED;
+    }
     area = qemu_ram_mmap(fd, memory, block->mr->align,
-                         block->flags & RAM_SHARED);
+                         flags);
     if (area == MAP_FAILED) {
         error_setg_errno(errp, errno,
                          "unable to map backing store for guest RAM");
@@ -2253,6 +2260,11 @@ static void ram_block_add(RAMBlock *new_block, Error **errp, bool shared)
         /* MADV_DONTFORK is also needed by KVM in absence of synchronous MMU */
         qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_DONTFORK);
         ram_block_notify_add(new_block->host, new_block->max_length);
+        if (enable_mlock) {
+            if (mlock(new_block->host, new_block->max_length) < 0) {
+                perror("mlock");
+            }
+        }
     }
 }
 

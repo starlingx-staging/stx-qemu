@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2003-2008 Fabrice Bellard
  * Copyright 2012-2013 Intel Corporation All Rights Reserved.
+ * Copyright (c) 2013-2016 Wind River Systems, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
 #endif /* CONFIG_COCOA */
 
 
+#include "qemu-common.h"
 #include "qemu/error-report.h"
 #include "qemu/sockets.h"
 #include "hw/hw.h"
@@ -1262,10 +1264,8 @@ static void smp_parse(QemuOpts *opts)
 static void realtime_init(void)
 {
     if (enable_mlock) {
-        if (os_mlock() < 0) {
-            error_report("locking memory failed");
-            exit(1);
-        }
+        /* WRS - do not call os_mlock(), prevent call to mlockall */
+        ;
     }
 }
 
