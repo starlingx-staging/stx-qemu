@@ -3061,7 +3061,7 @@ static void isa_cirrus_vga_realizefn(DeviceState *dev, Error **errp)
 
 static Property isa_cirrus_vga_properties[] = {
     DEFINE_PROP_UINT32("vgamem_mb", struct ISACirrusVGAState,
-                       cirrus_vga.vga.vram_size_mb, 16),
+                       cirrus_vga.vga.vram_size_mb, 8),
     DEFINE_PROP_BOOL("blitter", struct ISACirrusVGAState,
                      cirrus_vga.enable_blitter, true),
     DEFINE_PROP_END_OF_LIST(),
@@ -3134,7 +3134,7 @@ static void pci_cirrus_vga_realize(PCIDevice *dev, Error **errp)
 
 static Property pci_vga_cirrus_properties[] = {
     DEFINE_PROP_UINT32("vgamem_mb", struct PCICirrusVGAState,
-                       cirrus_vga.vga.vram_size_mb, 16),
+                       cirrus_vga.vga.vram_size_mb, 8),
     DEFINE_PROP_BOOL("blitter", struct PCICirrusVGAState,
                      cirrus_vga.enable_blitter, true),
     DEFINE_PROP_BOOL("global-vmstate", struct PCICirrusVGAState,
