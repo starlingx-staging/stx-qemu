@@ -60,6 +60,10 @@ bool vhost_has_free_slot(void)
     return slots_limit > used_memslots;
 }
 
+static int vhost_virtqueue_set_addr(struct vhost_dev *dev,
+                                    struct vhost_virtqueue *vq,
+                                    unsigned idx, bool enable_log);
+
 static void vhost_dev_sync_region(struct vhost_dev *dev,
                                   MemoryRegionSection *section,
                                   uint64_t mfirst, uint64_t mlast,
@@ -416,6 +420,21 @@ static void vhost_begin(MemoryListener *listener)
     dev->n_tmp_sections = 0;
 }
 
+static void vhost_update_backend_ring_mappings(struct vhost_dev *dev)
+{
+    int i,r;
+
+    if(dev->vhost_ops->backend_type != VHOST_BACKEND_TYPE_USER) {
+        return;
+    }
+
+    for (i = 0; i < dev->nvqs; ++i) {
+        r = vhost_virtqueue_set_addr(dev, dev->vqs + i, i, dev->log_enabled);
+        assert(r >= 0);
+    }
+    return;
+}
+
 static void vhost_commit(MemoryListener *listener)
 {
     struct vhost_dev *dev = container_of(listener, struct vhost_dev,
@@ -487,7 +506,7 @@ static void vhost_commit(MemoryListener *listener)
         if (r < 0) {
             VHOST_OPS_DEBUG("vhost_set_mem_table failed");
         }
-        goto out;
+        goto vring_mapping;
     }
     log_size = vhost_get_log_size(dev);
     /* We allocate an extra 4K bytes to log,
@@ -505,6 +524,11 @@ static void vhost_commit(MemoryListener *listener)
     if (dev->log_size > log_size + VHOST_LOG_BUFFER) {
         vhost_dev_log_resize(dev, log_size);
     }
+
+vring_mapping:
+    /* For vhost-user backend, update the vring mappings after we sent a new
+     * guest memory map. */
+    vhost_update_backend_ring_mappings(dev);
 
 out:
     /* Deref the old list of sections, this must happen _after_ the
