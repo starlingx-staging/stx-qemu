@@ -249,7 +249,15 @@
     },
 
 #define HW_COMPAT_2_2 \
-    /* empty */
+    {\
+        .driver   = "virtio-pci",\
+        .property = "disable-modern",\
+        .value    = "on",\
+    },{\
+        .driver   = "virtio-pci",\
+        .property = "disable-legacy",\
+        .value    = "off",\
+    },
 
 #define HW_COMPAT_2_1 \
     {\
