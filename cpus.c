@@ -80,7 +80,7 @@ static QEMUTimer *throttle_timer;
 static unsigned int throttle_percentage;
 
 #define CPU_THROTTLE_PCT_MIN 1
-#define CPU_THROTTLE_PCT_MAX 99
+#define CPU_THROTTLE_PCT_MAX 92
 #define CPU_THROTTLE_TIMESLICE_NS 10000000
 
 bool cpu_is_stopped(CPUState *cpu)
