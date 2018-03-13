@@ -1156,6 +1156,32 @@ machine_init(pc_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+/* Options for the latest rhel7 machine type */
+static void pc_machine_rhel7_options(MachineClass *m)
+{
+    m->family = "pc_piix_Y";
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    m->default_display = "std";
+    SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
+    m->alias = "pc";
+    m->is_default = 1;
+}
+
+static void pc_init_rhel740(MachineState *machine)
+{
+    pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
+             TYPE_I440FX_PCI_DEVICE);
+}
+
+static void pc_machine_rhel740_options(MachineClass *m)
+{
+    pc_machine_rhel7_options(m);
+    m->desc = "RHEL 7.4.0 PC (i440FX + PIIX, 1996)";
+}
+
+DEFINE_PC_MACHINE(rhel740, "pc-i440fx-rhel7.4.0", pc_init_rhel740,
+                  pc_machine_rhel740_options);
+
 static void pc_init_rhel730(MachineState *machine)
 {
     pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
@@ -1164,12 +1190,11 @@ static void pc_init_rhel730(MachineState *machine)
 
 static void pc_machine_rhel730_options(MachineClass *m)
 {
-    m->family = "pc_piix_Y";
-    m->alias = "pc";
+    /* Make same as 7.4.0 then just override pertinent fields */
+    pc_machine_rhel740_options(m);
+    m->alias = NULL;
+    m->is_default = 0;
     m->desc = "RHEL 7.3.0 PC (i440FX + PIIX, 1996)";
-    m->is_default = 1;
-    m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "std";
     SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
@@ -1199,6 +1224,7 @@ static void pc_machine_rhel720_options(MachineClass *m)
     pcmc->save_tsc_khz = false;
     m->legacy_fw_cfg_order = 1;
     /* Note: broken_reserved_end was already in 7.2 */
+    pcmc->legacy_cpu_hotplug = true;
     SET_MACHINE_COMPAT(m, PC_RHEL7_2_COMPAT);
 }
 

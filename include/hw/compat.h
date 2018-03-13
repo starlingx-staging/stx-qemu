@@ -377,5 +377,57 @@
             .driver   = "isa-fdc",\
             .property = "fallback",\
             .value    = "144",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "virtio-pci",\
+            .property = "disable-modern",\
+            .value    = "on",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "virtio-pci",\
+            .property = "disable-legacy",\
+            .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = TYPE_PCI_DEVICE,\
+            .property = "x-pcie-lnksta-dllla",\
+            .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "virtio-pci",\
+            .property = "page-per-vq",\
+            .value    = "on",\
+        },{\
+            .driver   = "migration",\
+            .property = "send-section-footer",\
+            .value    = "off",\
+        },{\
+            .driver   = "migration",\
+            .property = "store-global-state",\
+            .value    = "off",\
         },
+
+/* Mostly like HW_COMPAT_2_6 + HW_COMPAT_2_7 + HW_COMPAT_2_8 except
+ * disable-modern, disable-legacy, page-per-vq have already been
+ * backported to RHEL7.3
+ */
+#define HW_COMPAT_RHEL7_3 \
+    { /* HW_COMPAT_RHEL7_3 */ \
+        .driver   = "virtio-mmio",\
+        .property = "format_transport_address",\
+        .value    = "off",\
+    },{ /* HW_COMPAT_RHEL7_3 */ \
+        .driver   = "virtio-serial-device",\
+        .property = "emergency-write",\
+        .value    = "off",\
+    },{ /* HW_COMPAT_RHEL7_3 */ \
+        .driver   = "ioapic",\
+        .property = "version",\
+        .value    = "0x11",\
+    },{ /* HW_COMPAT_RHEL7_3 */ \
+        .driver   = "intel-iommu",\
+        .property = "x-buggy-eim",\
+        .value    = "true",\
+    },{ /* HW_COMPAT_RHEL7_3 */ \
+        .driver   = "virtio-pci",\
+        .property = "x-ignore-backend-features",\
+        .value    = "on",\
+    },
+
 #endif /* HW_COMPAT_H */
