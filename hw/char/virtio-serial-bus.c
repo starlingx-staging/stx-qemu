@@ -307,7 +307,7 @@ size_t virtio_serial_guest_ready(VirtIOSerialPort *port)
     VirtQueue *vq = port->ivq;
     unsigned int bytes;
 
-    if (!virtio_queue_ready(vq) ||
+    if (!vdev->vm_running ||
         !(vdev->status & VIRTIO_CONFIG_S_DRIVER_OK) ||
         virtio_queue_empty(vq)) {
         return 0;
