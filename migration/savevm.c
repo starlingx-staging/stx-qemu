@@ -42,6 +42,7 @@
 #include "postcopy-ram.h"
 #include "qapi/qmp/qerror.h"
 #include "qemu/error-report.h"
+#include "qemu/rcu_queue.h"
 #include "sysemu/cpus.h"
 #include "exec/memory.h"
 #include "exec/target_page.h"
@@ -82,6 +83,9 @@ enum qemu_vm_cmd {
 };
 
 #define MAX_VM_CMD_PACKAGED_SIZE (1ul << 24)
+
+bool shadow_bios_after_incoming;
+
 static struct mig_cmd_args {
     ssize_t     len; /* -1 = variable */
     const char *name;
@@ -1082,6 +1086,27 @@ void qemu_savevm_state_complete_postcopy(QEMUFile *f)
     qemu_fflush(f);
 }
 
+int qemu_query_detach(void)
+{
+    SaveStateEntry *se;
+    int ret = 0;
+
+    QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+        if (!se->ops || !se->ops->query_detach) {
+            continue;
+        }
+        if (se->ops && se->ops->is_active) {
+            if (!se->ops->is_active(se->opaque)) {
+                continue;
+            }
+        }
+
+        ret += se->ops->query_detach(se->opaque);
+    }
+
+    return ret;
+}
+
 int qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only,
                                        bool inactivate_disks)
 {
@@ -2079,6 +2104,14 @@ int qemu_loadvm_state(QEMUFile *f)
     }
 
     qemu_loadvm_state_cleanup();
+
+    /* Supplement SeaBIOS's shadowing now, because it was useless when the
+     * incoming VM started on the RHEL-6 emulator.
+     */
+    if (shadow_bios_after_incoming) {
+        shadow_bios();
+    }
+
     cpu_synchronize_all_post_init();
 
     return ret;

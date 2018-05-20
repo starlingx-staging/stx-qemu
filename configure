@@ -1031,6 +1031,10 @@ for opt do
   ;;
   --enable-tcg-interpreter) tcg_interpreter="yes"
   ;;
+  --dpdkdir=*)
+  ;;
+  --dpdktarget=*)
+  ;;
   --disable-cap-ng)  cap_ng="no"
   ;;
   --enable-cap-ng) cap_ng="yes"
@@ -1291,6 +1295,10 @@ for opt do
           error_exit "vhost-user isn't available on win32"
       fi
   ;;
+  --disable-live-block-migration) live_block_migration="no"
+  ;;
+  --enable-live-block-migration) live_block_migration="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1428,6 +1436,7 @@ Advanced options (experts only):
   --disable-strip          disable stripping binaries
   --disable-werror         disable compilation abort on warning
   --disable-stack-protector disable compiler-provided stack protection
+  --enable-stack-protector enable compiler-provided stack protection
   --audio-drv-list=LIST    set audio drivers list:
                            Available drivers: $audio_possible_drivers
   --block-drv-whitelist=L  Same as --block-drv-rw-whitelist=L
@@ -1523,6 +1532,8 @@ disabled with --disable-FEATURE, default is enabled if available:
   glusterfs       GlusterFS backend
   tpm             TPM support
   libssh2         ssh block device support
+  live-block-migration disable live block migration
+  live-block-migration  enable live block migration
   numa            libnuma support
   tcmalloc        tcmalloc support
   jemalloc        jemalloc support
@@ -2028,13 +2039,13 @@ fi
 
 if test "$seccomp" != "no" ; then
     case "$cpu" in
-    i386|x86_64)
+    i386|x86_64|aarch64)
         libseccomp_minver="2.1.0"
         ;;
     mips)
         libseccomp_minver="2.2.0"
         ;;
-    arm|aarch64)
+    arm)
         libseccomp_minver="2.2.3"
         ;;
     ppc|ppc64)
@@ -5538,6 +5549,29 @@ if test "$slirp" = "yes" ; then
   echo "CONFIG_SLIRP=y" >> $config_host_mak
   echo "CONFIG_SMBD_COMMAND=\"$smbd\"" >> $config_host_mak
 fi
+if test "$dpdk" = "yes"; then
+  if test "${rte_sdk+set}" != set; then
+    echo "No dpdkdir given"
+    exit 1
+  fi
+  echo "CONFIG_ENABLE_DPDK=y" >> $config_host_mak
+  echo "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
+  echo "" >> $config_host_mak
+  echo "dpdk_target=`eval echo $rte_target`" >> $config_host_mak
+  echo "dpdk_lib_dir=\$(dpdk_dir)/\$(dpdk_target)/lib" >> $config_host_mak
+  echo "dpdk_inc_dir=\$(dpdk_dir)/\$(dpdk_target)/include" >> $config_host_mak
+  echo "dpdk_libs=\$(dpdk_lib_dir)/librte_eal.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/libethdev.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_cmdline.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_hash.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_lpm.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_mbuf.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_mempool.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_ring.a \\" >> $config_host_mak
+  echo "   \$(dpdk_lib_dir)/librte_malloc.a" >> $config_host_mak
+  LIBS="\$(dpdk_libs) -ldl $LIBS"
+  QEMU_INCLUDES="-I\$(dpdk_inc_dir) $QEMU_INCLUDES"
+fi
 if test "$vde" = "yes" ; then
   echo "CONFIG_VDE=y" >> $config_host_mak
 fi
@@ -5970,6 +6004,10 @@ if test "$libssh2" = "yes" ; then
   echo "CONFIG_LIBSSH2=m" >> $config_host_mak
   echo "LIBSSH2_CFLAGS=$libssh2_cflags" >> $config_host_mak
   echo "LIBSSH2_LIBS=$libssh2_libs" >> $config_host_mak
+fi
+
+if test "$live_block_migration" = "yes" ; then
+  echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
 if test "$live_block_migration" = "yes" ; then

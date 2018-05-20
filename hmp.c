@@ -1024,6 +1024,12 @@ void hmp_info_tpm(Monitor *mon, const QDict *qdict)
                            tpo->has_cancel_path ? ",cancel-path=" : "",
                            tpo->has_cancel_path ? tpo->cancel_path : "");
             break;
+        case TPM_TYPE_OPTIONS_KIND_CUSE_TPM:
+            tpo = ti->options->u.passthrough.data;
+            monitor_printf(mon, "%s%s",
+                           tpo->has_path ? ",path=" : "",
+                           tpo->has_path ? tpo->path : "");
+            break;
         case TPM_TYPE_OPTIONS_KIND__MAX:
             break;
         }
@@ -1495,6 +1501,19 @@ void hmp_migrate_incoming(Monitor *mon, const QDict *qdict)
     hmp_handle_error(mon, &err);
 }
 
+void hmp_query_detach(Monitor *mon, const QDict *qdict)
+{
+    Error *err = NULL;
+    int count;
+    
+    count = qmp_query_detach(&err);
+    monitor_printf(mon, "%d AVP devices not detached", count);
+    if (err) {
+        error_report_err(err);
+        return;
+    }
+}
+
 /* Kept for backwards compatibility */
 void hmp_migrate_set_downtime(Monitor *mon, const QDict *qdict)
 {
@@ -1675,6 +1694,32 @@ void hmp_x_colo_lost_heartbeat(Monitor *mon, const QDict *qdict)
 
     qmp_x_colo_lost_heartbeat(&err);
     hmp_handle_error(mon, &err);
+}
+
+void hmp_migrate_set_thread_cpumask(Monitor *mon, const QDict *qdict)
+{
+    int64_t value = qdict_get_int(qdict, "value");
+    Error *err = NULL;
+    
+    qmp_migrate_set_thread_cpumask(value, &err);
+    if (err) {
+        monitor_printf(mon, "%s\n", error_get_pretty(err));
+        error_free(err);
+        return;
+    }
+}
+
+void hmp_migrate_set_thread_priority(Monitor *mon, const QDict *qdict)
+{
+    int64_t value = qdict_get_int(qdict, "value");
+    Error *err = NULL;
+
+    qmp_migrate_set_thread_priority(value, &err);
+    if (err) {
+        monitor_printf(mon, "%s\n", error_get_pretty(err));
+        error_free(err);
+        return;
+    }
 }
 
 void hmp_set_password(Monitor *mon, const QDict *qdict)
@@ -2130,6 +2175,16 @@ void hmp_screendump(Monitor *mon, const QDict *qdict)
     Error *err = NULL;
 
     qmp_screendump(filename, &err);
+    hmp_handle_error(mon, &err);
+}
+
+void hmp___com_redhat_qxl_screen_dump(Monitor *mon, const QDict *qdict)
+{
+    const char *id = qdict_get_str(qdict, "id");
+    const char *filename = qdict_get_str(qdict, "filename");
+    Error *err = NULL;
+
+    qmp___com_redhat_qxl_screendump(id, filename, &err);
     hmp_handle_error(mon, &err);
 }
 

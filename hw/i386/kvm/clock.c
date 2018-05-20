@@ -62,7 +62,7 @@ static uint64_t kvmclock_current_nsec(KVMClockState *s)
 {
     CPUState *cpu = first_cpu;
     CPUX86State *env = cpu->env_ptr;
-    hwaddr kvmclock_struct_pa = env->system_time_msr & ~1ULL;
+    hwaddr kvmclock_struct_pa;
     uint64_t migration_tsc = env->tsc;
     struct pvclock_vcpu_time_info time;
     uint64_t delta;
@@ -77,6 +77,7 @@ static uint64_t kvmclock_current_nsec(KVMClockState *s)
         return 0;
     }
 
+    kvmclock_struct_pa = env->system_time_msr & ~1ULL;
     cpu_physical_memory_read(kvmclock_struct_pa, &time, sizeof(time));
 
     assert(time.tsc_timestamp <= migration_tsc);
@@ -289,6 +290,7 @@ static void kvmclock_class_init(ObjectClass *klass, void *data)
     dc->realize = kvmclock_realize;
     dc->vmsd = &kvmclock_vmsd;
     dc->props = kvmclock_properties;
+    dc->user_creatable = false; /* RH state preserve */
 }
 
 static const TypeInfo kvmclock_info = {

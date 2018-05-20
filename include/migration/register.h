@@ -38,6 +38,8 @@ typedef struct SaveVMHandlers {
                               uint64_t threshold_size,
                               uint64_t *non_postcopiable_pending,
                               uint64_t *postcopiable_pending);
+    int (*query_detach)(void *opaque);
+
     LoadStateHandler *load_state;
     int (*load_setup)(QEMUFile *f, void *opaque);
     int (*load_cleanup)(void *opaque);

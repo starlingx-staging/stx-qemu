@@ -474,6 +474,7 @@ void pc_cmos_init(PCMachineState *pcms,
     rtc_set_memory(s, 0x5b, val);
     rtc_set_memory(s, 0x5c, val >> 8);
     rtc_set_memory(s, 0x5d, val >> 16);
+    rtc_set_memory(s, 0x5e, val >> 24);
 
     object_property_add_link(OBJECT(pcms), "rtc_state",
                              TYPE_ISA_DEVICE,
@@ -1593,8 +1594,9 @@ void pc_basic_device_init(ISABus *isa_bus, qemu_irq *gsi,
     }
 
     serial_hds_isa_init(isa_bus, 0, MAX_SERIAL_PORTS);
+#if 0 /* Disabled for Red Hat Enterprise Linux 7 */
     parallel_hds_isa_init(isa_bus, MAX_PARALLEL_PORTS);
-
+#endif
     a20_line = qemu_allocate_irqs(handle_a20_line_change, first_cpu, 2);
     i8042 = isa_create_simple(isa_bus, "i8042");
     i8042_setup_a20_line(i8042, a20_line[0]);
@@ -2353,7 +2355,8 @@ static void pc_machine_class_init(ObjectClass *oc, void *data)
     mc->default_boot_order = "cad";
     mc->hot_add_cpu = pc_hot_add_cpu;
     mc->block_default_type = IF_IDE;
-    mc->max_cpus = 255;
+    /* 240: max CPU count for RHEL */
+    mc->max_cpus = 240;
     mc->reset = pc_machine_reset;
     hc->pre_plug = pc_machine_device_pre_plug_cb;
     hc->plug = pc_machine_device_plug_cb;

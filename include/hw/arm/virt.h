@@ -108,7 +108,12 @@ typedef struct {
     int psci_conduit;
 } VirtMachineState;
 
+#if 0
 #define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt")
+#endif /* disabled for RHEL */
+
+#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt-rhel")
+
 #define VIRT_MACHINE(obj) \
     OBJECT_CHECK(VirtMachineState, (obj), TYPE_VIRT_MACHINE)
 #define VIRT_MACHINE_GET_CLASS(obj) \

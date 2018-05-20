@@ -36,7 +36,7 @@
 
 #define MAX_IS_ALLOCATED_SEARCH (65536 * BDRV_SECTOR_SIZE)
 
-#define MAX_INFLIGHT_IO 512
+#define MAX_INFLIGHT_IO 128
 
 //#define DEBUG_BLK_MIGRATION
 
@@ -1011,6 +1011,7 @@ static SaveVMHandlers savevm_block_handlers = {
     .save_setup = block_save_setup,
     .save_live_iterate = block_save_iterate,
     .save_live_complete_precopy = block_save_complete,
+    .query_detach = NULL,
     .save_live_pending = block_save_pending,
     .load_state = block_load,
     .save_cleanup = block_migration_cleanup,

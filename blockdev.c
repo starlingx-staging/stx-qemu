@@ -450,6 +450,32 @@ static void extract_common_blockdev_options(QemuOpts *opts, int *bdrv_flags,
     }
 }
 
+/**
+ * libvirt expects to be able to pass cache options for CDROM drives without
+ * inserted media. Historically, QEMU eventually ignores these cache options as
+ * they are lost when media is inserted. Recently, QEMU started rejecting these
+ * configurations. Libvirt however still generates such configurations.
+ *
+ * To prevent QEMU from being unable to start, pretend there are no options
+ * present if the only options present are cache options for the BDS.
+ */
+static bool __redhat_com_has_bs_opts(QDict *bs_opts)
+{
+    size_t n, s;
+    s = qdict_size(bs_opts);
+
+    if (s == 0) {
+        return false;
+    } else if (s > 2) {
+        return true;
+    }
+
+    n = qdict_haskey(bs_opts, BDRV_OPT_CACHE_DIRECT);
+    n += qdict_haskey(bs_opts, BDRV_OPT_CACHE_NO_FLUSH);
+
+    return s != n;
+}
+
 /* Takes the ownership of bs_opts */
 static BlockBackend *blockdev_init(const char *file, QDict *bs_opts,
                                    Error **errp)
@@ -557,7 +583,7 @@ static BlockBackend *blockdev_init(const char *file, QDict *bs_opts,
     read_only = qemu_opt_get_bool(opts, BDRV_OPT_READ_ONLY, false);
 
     /* init */
-    if ((!file || !*file) && !qdict_size(bs_opts)) {
+    if ((!file || !*file) && !__redhat_com_has_bs_opts(bs_opts)) {
         BlockBackendRootState *blk_rs;
 
         blk = blk_new(0, BLK_PERM_ALL);
@@ -2854,32 +2880,28 @@ BlockDirtyBitmapSha256 *qmp_x_debug_block_dirty_bitmap_sha256(const char *node,
     return ret;
 }
 
-void hmp_drive_del(Monitor *mon, const QDict *qdict)
+void qmp_drive_del(QDict *qdict, QObject **ret_data, Error **errp)
 {
     const char *id = qdict_get_str(qdict, "id");
     BlockBackend *blk;
     BlockDriverState *bs;
     AioContext *aio_context;
-    Error *local_err = NULL;
 
     bs = bdrv_find_node(id);
     if (bs) {
-        qmp_blockdev_del(id, &local_err);
-        if (local_err) {
-            error_report_err(local_err);
-        }
+        qmp_blockdev_del(id, errp);
         return;
     }
 
     blk = blk_by_name(id);
     if (!blk) {
-        error_report("Device '%s' not found", id);
+        error_setg(errp, "Device '%s' not found", id);
         return;
     }
 
     if (!blk_legacy_dinfo(blk)) {
-        error_report("Deleting device added with blockdev-add"
-                     " is not supported");
+        error_setg(errp, "Deleting device added with blockdev-add"
+                         " is not supported");
         return;
     }
 
@@ -2888,8 +2910,7 @@ void hmp_drive_del(Monitor *mon, const QDict *qdict)
 
     bs = blk_bs(blk);
     if (bs) {
-        if (bdrv_op_is_blocked(bs, BLOCK_OP_TYPE_DRIVE_DEL, &local_err)) {
-            error_report_err(local_err);
+        if (bdrv_op_is_blocked(bs, BLOCK_OP_TYPE_DRIVE_DEL, errp)) {
             aio_context_release(aio_context);
             return;
         }
@@ -2912,6 +2933,16 @@ void hmp_drive_del(Monitor *mon, const QDict *qdict)
     }
 
     aio_context_release(aio_context);
+}
+
+void hmp_drive_del(Monitor *mon, const QDict *qdict)
+{
+    Error *local_err = NULL;
+
+    qmp_drive_del((QDict *)qdict, NULL, &local_err);
+    if (local_err) {
+        error_report_err(local_err);
+    }
 }
 
 void qmp_block_resize(bool has_device, const char *device,
@@ -4127,4 +4158,18 @@ QemuOptsList qemu_drive_opts = {
          */
         { /* end of list */ }
     },
+};
+
+QemuOptsList qemu_simple_drive_opts = {
+    .name = "simple-drive",
+    .implied_opt_name = "format",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_simple_drive_opts.head),
+    .desc = {
+        /*
+         * no elements => accept any
+         * sanity checking will happen later
+         * when setting device properties
+         */
+        { /* end if list */ }
+    }
 };

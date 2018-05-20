@@ -94,6 +94,8 @@ void qemu_remove_machine_init_done_notifier(Notifier *notify);
 void qemu_announce_self(void);
 
 extern int autostart;
+extern bool shadow_bios_after_incoming;
+int qemu_query_detach(void);
 
 typedef enum {
     VGA_NONE, VGA_STD, VGA_CIRRUS, VGA_VMWARE, VGA_XENFB, VGA_QXL,
@@ -197,6 +199,7 @@ extern QemuOptsList qemu_legacy_drive_opts;
 extern QemuOptsList qemu_common_drive_opts;
 extern QemuOptsList qemu_drive_opts;
 extern QemuOptsList bdrv_runtime_opts;
+extern QemuOptsList qemu_simple_drive_opts;
 extern QemuOptsList qemu_chardev_opts;
 extern QemuOptsList qemu_device_opts;
 extern QemuOptsList qemu_netdev_opts;

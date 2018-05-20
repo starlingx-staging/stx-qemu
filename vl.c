@@ -54,6 +54,7 @@ int main(int argc, char **argv)
 #endif /* CONFIG_COCOA */
 
 
+#include "qemu-common.h"
 #include "qemu/error-report.h"
 #include "qemu/sockets.h"
 #include "hw/hw.h"
@@ -1273,10 +1274,8 @@ static void smp_parse(QemuOpts *opts)
 static void realtime_init(void)
 {
     if (enable_mlock) {
-        if (os_mlock() < 0) {
-            error_report("locking memory failed");
-            exit(1);
-        }
+        /* WRS - do not call os_mlock(), prevent call to mlockall */
+        ;
     }
 }
 
@@ -1927,9 +1926,17 @@ static void version(void)
            QEMU_COPYRIGHT "\n");
 }
 
+static void print_rh_warning(void)
+{
+    printf("\nWARNING: Direct use of qemu-kvm from the command line is not supported by Red Hat.\n"
+             "WARNING: Use libvirt as the stable management interface.\n"
+             "WARNING: Some command line options listed here may not be available in future releases.\n\n");
+}
+
 static void help(int exitcode)
 {
     version();
+    print_rh_warning();
     printf("usage: %s [options] [disk_image]\n\n"
            "'disk_image' is a raw hard disk image for IDE hard disk 0\n\n",
             error_get_progname());
@@ -1946,6 +1953,7 @@ static void help(int exitcode)
            "\n"
            QEMU_HELP_BOTTOM "\n");
 
+    print_rh_warning();
     exit(exitcode);
 }
 
@@ -2897,6 +2905,7 @@ static void set_memory_options(uint64_t *ram_slots, ram_addr_t *maxram_size,
     }
 
     sz = QEMU_ALIGN_UP(sz, 8192);
+    sz = MAX(sz, 2 * 1024 * 1024);
     ram_size = sz;
     if (ram_size != sz) {
         error_report("ram size too large");
@@ -3054,6 +3063,7 @@ int main(int argc, char **argv, char **envp)
     qemu_add_drive_opts(&qemu_common_drive_opts);
     qemu_add_drive_opts(&qemu_drive_opts);
     qemu_add_drive_opts(&bdrv_runtime_opts);
+    qemu_add_opts(&qemu_simple_drive_opts);
     qemu_add_opts(&qemu_chardev_opts);
     qemu_add_opts(&qemu_device_opts);
     qemu_add_opts(&qemu_netdev_opts);

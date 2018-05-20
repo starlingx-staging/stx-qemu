@@ -266,6 +266,20 @@ Save screen into PPM image @var{filename}.
 ETEXI
 
     {
+        .name       = "__com.redhat_qxl_screendump",
+        .args_type  = "id:s,filename:F",
+        .params     = "id filename",
+        .help       = "save screen from qxl device 'id' into PPM image 'filename'",
+        .cmd        = hmp___com_redhat_qxl_screen_dump,
+    },
+
+STEXI
+@item __com.redhat_screendump @var{id} @var{filename}
+@findex __com.redhat_screendump
+Save screen from qxl device @var{id} into PPM image @var{filename}.
+ETEXI
+
+    {
         .name       = "logfile",
         .args_type  = "filename:F",
         .params     = "filename",
@@ -665,6 +679,7 @@ STEXI
 Compute the checksum of a memory region.
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "usb_add",
         .args_type  = "devname:s",
@@ -697,6 +712,7 @@ hub. @var{devname} has the syntax @code{bus.addr}. Use the monitor
 command @code{info usb} to see the devices you can remove. This
 command is deprecated, please use @code{device_del} instead.
 ETEXI
+#endif
 
     {
         .name       = "device_add",
@@ -979,6 +995,21 @@ as the -incoming option).
 ETEXI
 
     {
+        .name       = "query_detach",
+        .args_type  = "",
+        .params     = "",
+        .help       = "query for completion of migrate_detach",
+        .cmd        = hmp_query_detach,
+    },
+
+STEXI
+@item query_detach
+@findex query_detach
+Query for completion of migrate_detach.
+
+ETEXI
+
+    {
         .name       = "migrate_set_cache_size",
         .args_type  = "value:o",
         .params     = "value",
@@ -1102,6 +1133,38 @@ STEXI
 Set migration information for remote display.  This makes the server
 ask the client to automatically reconnect using the new parameters
 once migration finished successfully.  Only implemented for SPICE.
+ ETEXI
+ 
+     {
+        .name       = "migrate_set_thread_cpumask",
+        .args_type  = "value:o",
+        .params     = "value",
+        .help       = "Set CPU mask for the migration thread."
+                      "Defaults to CPU 0 if no mask is specified",
+        .cmd        = hmp_migrate_set_thread_cpumask,
+    },
+
+STEXI
+@item migrate_set_thread_cpumask @var{value}
+@findex migrate_set_thread_cpumask
+Set CPU mask for the migration thread
+ETEXI
+
+    {
+        .name       = "migrate_set_thread_priority",
+        .args_type  = "value:o",
+        .params     = "value",
+        .help       = "Set real time priority for the the migration thread."
+                      "Defaults to no change migration thread priority if not"
+                      "specified or out of range. Range [1-99].Scheduling"
+                      "policy will always be- SCHED_FIFO",
+        .cmd        = hmp_migrate_set_thread_priority,
+    },
+
+STEXI
+@item migrate_set_thread_priority @var{value}
+@findex migrate_set_thread_priority
+Set real time priority for the the migration thread
 ETEXI
 
     {
@@ -1287,6 +1350,26 @@ Add drive to PCI storage controller.
 ETEXI
 
     {
+        .name       = RFQDN_REDHAT "drive_add",
+        .args_type  = "simple-drive:O",
+        .params     = "id=name,[file=file][,format=f][,media=d]...",
+        .help       = "Create a drive similar to -device if=none.",
+        .cmd        = hmp_simple_drive_add,
+    },
+
+STEXI
+@item __com.redhat_drive_add
+@findex __com.redhat_drive_add
+Create a drive similar to -device if=none.
+ETEXI
+
+STEXI
+@item pci_del
+@findex pci_del
+Hot remove PCI device.
+ETEXI
+
+    {
         .name       = "pcie_aer_inject_error",
         .args_type  = "advisory_non_fatal:-a,correctable:-c,"
 	              "id:s,error_status:s,"
@@ -1310,6 +1393,7 @@ STEXI
 Inject PCIe AER error
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "host_net_add",
         .args_type  = "device:s,opts:s?",
@@ -1339,6 +1423,7 @@ STEXI
 @findex host_net_remove
 Remove host VLAN client. Deprecated, please use @code{netdev_del} instead.
 ETEXI
+#endif
 
     {
         .name       = "netdev_add",

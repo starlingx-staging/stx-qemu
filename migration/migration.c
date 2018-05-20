@@ -38,12 +38,23 @@
 #include "qemu/thread.h"
 #include "qmp-commands.h"
 #include "trace.h"
+#include "trace-root.h"
 #include "qapi-event.h"
 #include "exec/target_page.h"
 #include "io/channel-buffer.h"
 #include "migration/colo.h"
 #include "hw/boards.h"
 #include "monitor/monitor.h"
+#include <sched.h>
+
+/* #define DEBUG */
+
+#ifdef DEBUG
+#define DPRINTF(fmt, ...) \
+        printf(fmt, ## __VA_ARGS__)
+#else
+#define DPRINTF(fmt, ...)
+#endif
 
 #define MAX_THROTTLE  (32 << 20)      /* Migration transfer speed throttling */
 
@@ -82,6 +93,11 @@
 static NotifierList migration_state_notifiers =
     NOTIFIER_LIST_INITIALIZER(migration_state_notifiers);
 
+/* variables for pinning the migration thread to a CPU and assing the
+ * realtime priority to it */
+static uint64_t migrate_thread_cpumask=0;
+static uint64_t migrate_thread_priority=0;
+
 static bool deferred_incoming;
 
 /* Messages sent on the return path from destination to source */
@@ -95,6 +111,7 @@ enum mig_rp_message_type {
 
     MIG_RP_MSG_MAX
 };
+bool migrate_pre_2_2;
 
 /* When we add fault tolerance, we could have several
    migrations at once.  For now we don't need to add
@@ -1212,6 +1229,13 @@ void qmp_migrate(const char *uri, bool has_blk, bool blk,
     MigrationState *s = migrate_get_current();
     const char *p;
 
+#ifndef CONFIG_LIVE_BLOCK_MIGRATION
+    if (params.blk || params.shared) {
+        error_setg(errp, QERR_UNSUPPORTED);
+        return;
+    }
+#endif
+
     if (migration_is_setup_or_active(s->state) ||
         s->state == MIGRATION_STATUS_CANCELLING ||
         s->state == MIGRATION_STATUS_COLO) {
@@ -1274,6 +1298,11 @@ void qmp_migrate(const char *uri, bool has_blk, bool blk,
     }
 }
 
+int64_t qmp_query_detach(Error **errp)
+{
+    return qemu_query_detach();
+}
+
 void qmp_migrate_cancel(Error **errp)
 {
     migrate_fd_cancel(migrate_get_current());
@@ -1306,6 +1335,30 @@ void qmp_migrate_set_cache_size(int64_t value, Error **errp)
     }
 
     s->xbzrle_cache_size = new_size;
+}
+
+void qmp_migrate_set_thread_cpumask(int64_t value, Error **errp)
+{
+    /* Check for truncation */
+    if (value != (size_t)value) {
+        error_setg(errp, "Migration thread CPU Mask exceeding address space");
+        return;
+    }
+    /*resize the value */
+    value >>= 20; /*Magic */
+    migrate_thread_cpumask = value;
+}
+
+void qmp_migrate_set_thread_priority(int64_t value, Error **errp)
+{
+    /* Check for truncation */
+    if (value != (size_t)value) {
+        error_setg(errp, "Migration thread Priority exceeding address space");
+        return;
+    }
+    /*resize the value */
+    value >>= 20;
+    migrate_thread_priority = value;
 }
 
 int64_t qmp_query_migrate_cache_size(Error **errp)
@@ -1979,6 +2032,21 @@ static void *migration_thread(void *opaque)
          */
         qemu_savevm_send_postcopy_advise(s->to_dst_file);
     }
+
+    /* Bind Migration thread to the processor specified by the user */
+    if (sched_setaffinity(0, sizeof(migrate_thread_cpumask), (cpu_set_t *)&migrate_thread_cpumask) <0) {
+        DPRINTF("Error setting user input affinity. Switching to default.\n");
+    }
+
+    /* Change the realtime priority of the migration thread specified by the user */
+    struct sched_param schedp;
+    memset(&schedp, 0, sizeof(schedp));
+    schedp.sched_priority = migrate_thread_priority;
+    if (sched_setscheduler(0, SCHED_FIFO, &schedp) < 0) {
+         DPRINTF("Error setting user input priority. Switching to default.\n");
+    }
+
+    trace_migrate_thread(migrate_thread_cpumask, migrate_thread_priority);
 
     qemu_savevm_state_setup(s->to_dst_file);
 

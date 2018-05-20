@@ -238,16 +238,30 @@ static void i440fx_pcihost_get_pci_hole_end(Object *obj, Visitor *v,
     visit_type_uint32(v, name, &value, errp);
 }
 
+#define TIS_HOTPLUG_SPACE_START (0x1ULL << 32)
+
 static void i440fx_pcihost_get_pci_hole64_start(Object *obj, Visitor *v,
                                                 const char *name,
                                                 void *opaque, Error **errp)
 {
+    I440FXState *s = I440FX_PCI_HOST_BRIDGE(obj);
     PCIHostState *h = PCI_HOST_BRIDGE(obj);
     Range w64;
     uint64_t value;
 
     pci_bus_get_w64_range(h->bus, &w64);
     value = range_is_empty(&w64) ? 0 : range_lob(&w64);
+    /* Titanium Cloud we use the existing but unused hole64 size attribute (default zero)
+       to extend the pci hole64 by that size.  This provides hotplug address space.
+    */
+    if ((s->pci_hole64_size != DEFAULT_PCI_HOLE64_SIZE) && (s->pci_hole64_size != 0)) {
+        /* We want additional space, see if have to create vs extend */
+        if (value == 0) {
+            /* We have to create as we don't have a range yet */
+            value = TIS_HOTPLUG_SPACE_START;
+        }
+    }
+
     visit_type_uint64(v, name, &value, errp);
 }
 
@@ -255,12 +269,27 @@ static void i440fx_pcihost_get_pci_hole64_end(Object *obj, Visitor *v,
                                               const char *name, void *opaque,
                                               Error **errp)
 {
+    I440FXState *s = I440FX_PCI_HOST_BRIDGE(obj);
     PCIHostState *h = PCI_HOST_BRIDGE(obj);
     Range w64;
     uint64_t value;
 
     pci_bus_get_w64_range(h->bus, &w64);
     value = range_is_empty(&w64) ? 0 : range_upb(&w64) + 1;
+    /* Titanium Cloud we use the existing but unused hole64 size attribute (default zero)
+       to extend the pci hole64 by that size.  This provides hotplug address space.
+    */
+    if ((s->pci_hole64_size != DEFAULT_PCI_HOLE64_SIZE) && (s->pci_hole64_size != 0)) {
+        /* We want additional space, see if have to create vs extend */
+        if (value == 0) {
+            /* we are creating */
+            value = TIS_HOTPLUG_SPACE_START + s->pci_hole64_size;
+        } else {
+            /* we are extending */
+            value = value + s->pci_hole64_size;
+        }
+    }
+
     visit_type_uint64(v, name, &value, errp);
 }
 
@@ -882,7 +911,9 @@ static const TypeInfo i440fx_pcihost_info = {
 static void i440fx_register_types(void)
 {
     type_register_static(&i440fx_info);
+#if 0 /*  Disabled in Red Hat Enterprise Linux */
     type_register_static(&igd_passthrough_i440fx_info);
+#endif
     type_register_static(&piix3_pci_type_info);
     type_register_static(&piix3_info);
     type_register_static(&piix3_xen_info);

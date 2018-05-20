@@ -24,6 +24,7 @@
 #include "hw/virtio/virtio-access.h"
 #include "sysemu/dma.h"
 
+#include "standard-headers/linux/virtio_net.h"
 /*
  * The alignment to use between consumer and producer parts of vring.
  * x86 pagesize again. This is the default, used by transports like PCI
@@ -1984,7 +1985,24 @@ const VMStateInfo  virtio_vmstate_info = {
 static int virtio_set_features_nocheck(VirtIODevice *vdev, uint64_t val)
 {
     VirtioDeviceClass *k = VIRTIO_DEVICE_GET_CLASS(vdev);
-    bool bad = (val & ~(vdev->host_features)) != 0;
+    bool bad;
+    uint64_t ctrl_guest_mask = 1ull << VIRTIO_NET_F_CTRL_GUEST_OFFLOADS;
+
+    if (vdev->rhel6_ctrl_guest_workaround && (val & ctrl_guest_mask) &&
+          !(vdev->host_features & ctrl_guest_mask)) {
+        /*
+         * This works around a mistake in the definition of the rhel6.[56].0
+         * machinetypes, ctrl-guest-offload was not set in qemu-kvm-rhev for
+         * those machine types, but is set on the rhel6 qemu-kvm-rhev build.
+         * If an incoming rhel6 guest uses it then we need to allow it.
+         * Note: There's a small race where a guest read the flag but didn't
+         * declare it's useage yet.
+         */
+        fprintf(stderr, "RHEL6 ctrl_guest_offload workaround\n");
+        vdev->host_features |= ctrl_guest_mask;
+    }
+
+    bad = (val & ~(vdev->host_features)) != 0;
 
     val &= vdev->host_features;
     if (k->set_features) {
@@ -2142,6 +2160,7 @@ int virtio_load(VirtIODevice *vdev, QEMUFile *f, int version_id)
     for (i = 0; i < num; i++) {
         if (vdev->vq[i].vring.desc) {
             uint16_t nheads;
+            int inuse_tmp;
 
             /*
              * VIRTIO-1 devices migrate desc, used, and avail ring addresses so
@@ -2174,12 +2193,15 @@ int virtio_load(VirtIODevice *vdev, QEMUFile *f, int version_id)
              * Since max ring size < UINT16_MAX it's safe to use modulo
              * UINT16_MAX + 1 subtraction.
              */
-            vdev->vq[i].inuse = (uint16_t)(vdev->vq[i].last_avail_idx -
+            inuse_tmp = (int)(vdev->vq[i].last_avail_idx -
                                 vdev->vq[i].used_idx);
+
+            vdev->vq[i].inuse = (inuse_tmp < 0 ? 0 : inuse_tmp);
+
             if (vdev->vq[i].inuse > vdev->vq[i].vring.num) {
-                error_report("VQ %d size 0x%x < last_avail_idx 0x%x - "
+                error_report("VQ %d inuse %u size 0x%x < last_avail_idx 0x%x - "
                              "used_idx 0x%x",
-                             i, vdev->vq[i].vring.num,
+                             i, vdev->vq[i].inuse, vdev->vq[i].vring.num,
                              vdev->vq[i].last_avail_idx,
                              vdev->vq[i].used_idx);
                 return -1;
@@ -2548,6 +2570,8 @@ static void virtio_device_instance_finalize(Object *obj)
 
 static Property virtio_properties[] = {
     DEFINE_VIRTIO_COMMON_FEATURES(VirtIODevice, host_features),
+    DEFINE_PROP_BOOL("__com.redhat_rhel6_ctrl_guest_workaround", VirtIODevice,
+                     rhel6_ctrl_guest_workaround, false),
     DEFINE_PROP_END_OF_LIST(),
 };
 
