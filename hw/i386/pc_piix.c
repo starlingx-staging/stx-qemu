@@ -1159,6 +1159,8 @@ machine_init(pc_machine_init);
 /* Options for the latest rhel7 machine type */
 static void pc_machine_rhel7_options(MachineClass *m)
 {
+    PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
+    pcmc->default_nic_model = "e1000";
     m->family = "pc_piix_Y";
     m->default_machine_opts = "firmware=bios-256k.bin";
     m->default_display = "std";
