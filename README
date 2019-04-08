@@ -1,6 +1,12 @@
          QEMU README
          ===========
 
+StarlingX Notes:  CentOS uses qemu-kvm as the name of the executable.
+Any references in the documentation to qemu-system-x86_64 should be
+replaced with qemu-kvm.  Only the x86_64 architecture is supported.
+qemu-kvm is not supported directly from command line, use the libvirt
+management interface instead.
+
 QEMU is a generic and open source machine & userspace emulator and
 virtualizer.
 
